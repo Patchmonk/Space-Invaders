@@ -37,8 +37,10 @@ try:
     if enemyImg.get_width() == 0 or enemyImg.get_height() == 0:
         raise ValueError("Enemy image is invalid or empty.")
 
-    # Music
-    mixer.music.load("assets/music/background.wav")
+    # Music and Sounds
+    mixer.music.load("assets/music/background.mp3")
+    laser_sound = mixer.Sound("assets/sounds/laser-gun-shot.wav")  # Bullet firing sound
+    explosion_sound = mixer.Sound("assets/sounds/destroyed.wav")   # Enemy destruction sound
 except Exception as e:
     print(f"Error loading assets: {e}")
     pygame.quit()
@@ -148,6 +150,7 @@ while running:
                 # Fire a new bullet if the maximum number of bullets hasn't been reached
                 if len(game_state.bullets) < MAX_BULLETS:
                     game_state.bullets.append({'x': game_state.playerX, 'y': game_state.playerY})
+                    laser_sound.play()  # Play laser sound when firing
         if event.type == pygame.KEYUP:
             if event.key in key_states:
                 key_states[event.key] = False
@@ -189,6 +192,7 @@ while running:
             if is_collision(enemy_data['x'], enemy_data['y'], bullet['x'], bullet['y']):
                 game_state.score_value += 1
                 game_state.bullets.remove(bullet)  # Remove the bullet
+                explosion_sound.play()  # Play explosion sound when enemy is destroyed
                 enemy_data['x'] = random.randint(0, 735)
                 enemy_data['y'] = random.randint(50, 150)
                 break
