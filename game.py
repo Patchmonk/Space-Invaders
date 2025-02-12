@@ -33,6 +33,10 @@ try:
     enemyImg = pygame.image.load('assets/images/enemy.png')
     bulletImg = pygame.image.load('assets/images/bullet.png')
 
+    # Validate image sizes
+    if enemyImg.get_width() == 0 or enemyImg.get_height() == 0:
+        raise ValueError("Enemy image is invalid or empty.")
+
     # Music
     mixer.music.load("assets/music/background.wav")
 except Exception as e:
@@ -76,6 +80,7 @@ class GameState:
 
 # Initialize game state
 game_state = GameState()
+game_state.reset()  # Populate enemies at the start
 
 # Functions
 def show_score(x, y):
@@ -89,14 +94,12 @@ def game_over_text():
 def draw_button(text, x, y, width, height, color, hover_color, action=None):
     mouse = pygame.mouse.get_pos()
     click = pygame.mouse.get_pressed()
-
     if x < mouse[0] < x + width and y < mouse[1] < y + height:
         pygame.draw.rect(screen, hover_color, (x, y, width, height))
         if click[0] == 1 and action is not None:
             action()
     else:
         pygame.draw.rect(screen, color, (x, y, width, height))
-
     button_text = font.render(text, True, WHITE)
     text_rect = button_text.get_rect(center=(x + width // 2, y + height // 2))
     screen.blit(button_text, text_rect)
@@ -169,17 +172,20 @@ while running:
             fire_bullet(bullet['x'], bullet['y'])
 
     # Enemy movement and collision
-    for enemy_data in game_state.enemies:
+    for enemy_data in game_state.enemies[:]:  # Iterate over a copy of the list
         if game_state.game_over:
             break
 
+        # Move the enemy horizontally
         enemy_data['x'] += enemy_data['x_change']
+
+        # Reverse direction and move down when hitting boundaries
         if enemy_data['x'] <= 0 or enemy_data['x'] >= SCREEN_WIDTH - 64:
             enemy_data['x_change'] *= -1
             enemy_data['y'] += enemy_data['y_change']
 
-        # Collision detection
-        for bullet in game_state.bullets[:]:  # Check collisions with all bullets
+        # Check collisions with bullets
+        for bullet in game_state.bullets[:]:
             if is_collision(enemy_data['x'], enemy_data['y'], bullet['x'], bullet['y']):
                 game_state.score_value += 1
                 game_state.bullets.remove(bullet)  # Remove the bullet
@@ -187,6 +193,7 @@ while running:
                 enemy_data['y'] = random.randint(50, 150)
                 break
 
+        # Draw the enemy
         draw_enemy(enemy_data['x'], enemy_data['y'])
 
         # Game over condition
